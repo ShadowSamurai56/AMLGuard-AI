@@ -292,7 +292,7 @@ def render_interactive_graph(G, target_id, dataset="AMLSim", gnn_edge_importance
         hoverlabel=dict(
             bgcolor="#1e293b",
             font_size=12,
-            font_family="DM Sans",
+            font_family="DM Sans, sans-serif",
             font_color="#f8fafc"
         )
     )

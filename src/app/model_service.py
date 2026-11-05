@@ -131,12 +131,14 @@ def explain_logreg_account(acct_id, features_df):
         if not pd.api.types.is_numeric_dtype(X_raw[col]):
             X_raw[col] = 0.0
 
-    feature_names = list(X_raw.columns)
-    X_mat = X_raw.values.astype(float)
     scaler = models["scaler"]
     lr = models["lr"]
+    cols = list(scaler.feature_names_in_) if hasattr(scaler, "feature_names_in_") else list(X_raw.columns)
+    X_df = X_raw[cols].astype(float)
+    feature_names = cols
+    X_mat = X_df.values
 
-    X_scaled = scaler.transform(X_mat)[0]
+    X_scaled = scaler.transform(X_df)[0]
     coefs = lr.coef_[0]
     contribs = coefs * X_scaled
     total_abs = float(np.sum(np.abs(contribs)))
@@ -164,7 +166,7 @@ def explain_logreg_account(acct_id, features_df):
     top_feature = items_by_pos[0]
     top_3 = items_by_pos[:3]
 
-    prob = float(lr.predict_proba(scaler.transform(X_mat))[0, 1])
+    prob = float(lr.predict_proba(scaler.transform(X_df))[0, 1])
 
     clause = f"Linear baseline elevation (LogReg: {prob*100:.1f}%) is driven mainly by {top_feature['label']} ({top_feature['share_pct']:.1f}% of its total contribution)."
 
@@ -211,13 +213,15 @@ def predict_amlsim_account(acct_id, features_df, typology=None):
         if not pd.api.types.is_numeric_dtype(X_raw[col]):
             X_raw[col] = 0.0
 
-    X_mat = X_raw.values.astype(float)
+    cols = list(models["rf"].feature_names_in_) if "rf" in models and hasattr(models["rf"], "feature_names_in_") else list(X_raw.columns)
+    X_df = X_raw[cols].astype(float)
+    X_mat = X_df.values
     scores = {}
 
     # 1. Random Forest
     if "rf" in models:
         try:
-            scores["Random Forest"] = float(models["rf"].predict_proba(X_mat)[0, 1])
+            scores["Random Forest"] = float(models["rf"].predict_proba(X_df)[0, 1])
         except Exception:
             scores["Random Forest"] = 0.0
 
@@ -231,7 +235,7 @@ def predict_amlsim_account(acct_id, features_df, typology=None):
     # 3. Logistic Regression
     if "lr" in models and "scaler" in models:
         try:
-            X_scaled = models["scaler"].transform(X_mat)
+            X_scaled = models["scaler"].transform(X_df)
             scores["Logistic Regression"] = float(models["lr"].predict_proba(X_scaled)[0, 1])
         except Exception:
             scores["Logistic Regression"] = 0.0

@@ -13,7 +13,7 @@ RESULTS_DIR = os.path.join(ROOT_DIR, "results")
 # Application Metadata
 APP_VERSION = "v2.1"
 APP_SUBTITLE = "Research Prototype"
-BUILD_ID = "d930ade"
+BUILD_ID = "280306b"
 
 # Database configuration (with graceful fallback to cached parquet)
 DB_CONFIG = {

@@ -1,0 +1,5 @@
+metric,baseline_hits,override_hits,total_targets,baseline_rate,override_rate,delta_hits,notes
+cycle_recall,2,3,4,0.5,0.75,1,Circular wash-trading rings
+fan_in_recall,4,5,6,0.6666666666666666,0.8333333333333334,1,Fan-in structuring schemes
+overall_sar_recall,11,13,16,0.6875,0.8125,2,Held-out test set positive alerts
+false_positive_rate,0,1,274,0.0,0.0036496350364963502,1,Normal accounts wrongly escalated

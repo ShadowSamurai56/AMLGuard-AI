@@ -208,12 +208,12 @@ def render_investigation_view():
                         f"<b>{it['label']}</b>: {it['contribution']:+.3f} ({it['share_pct']:.1f}%)"
                         for it in top_items
                     ])
-                    st.markdown(
-                        f'<div style="font-size: 0.76rem; color: #94a3b8; margin-top: -8px; padding: 0.5rem 0.75rem; background: #0f172a; border: 1px solid #1e293b; border-radius: 6px;">'
-                        f'<span style="color: #60a5fa; font-weight: 600;">Logistic Regression: top feature contributions:</span><br>{top_str}'
-                        f'</div>',
-                        unsafe_allow_html=True
-                    )
+                    logreg_badge_html = textwrap.dedent(f"""
+                    <div style="font-size: 0.76rem; color: #94a3b8; margin-top: -8px; padding: 0.5rem 0.75rem; background: #0f172a; border: 1px solid #1e293b; border-radius: 6px;">
+                        <span style="color: #60a5fa; font-weight: 600;">Logistic Regression: top feature contributions:</span><br>{top_str}
+                    </div>
+                    """).strip()
+                    st.markdown(logreg_badge_html, unsafe_allow_html=True)
 
             with tab_logreg:
                 st.markdown("##### Logistic Regression: top feature contributions")

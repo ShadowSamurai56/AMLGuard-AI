@@ -9,7 +9,7 @@ import textwrap
 
 def apply_theme():
     """Injects high-end, responsive custom styling into Streamlit."""
-    custom_css = """
+    custom_css = textwrap.dedent("""
     <style>
         /* Import Google Fonts */
         @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap');
@@ -209,7 +209,7 @@ def apply_theme():
             border-radius: 4px !important;
         }
     </style>
-    """
+    """).strip()
     st.markdown(custom_css, unsafe_allow_html=True)
 
 

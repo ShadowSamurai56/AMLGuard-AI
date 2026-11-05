@@ -107,7 +107,7 @@ def compute_local_shap(features_dict, top_k=8):
         height=320,
         margin=dict(l=10, r=40, t=30, b=30),
         xaxis=dict(
-            title=dict(text="SHAP Attribution (Shapley Value on Log-Odds)", font=dict(size=11, color="#64748b", family="DM Sans")),
+            title=dict(text="SHAP Attribution (Shapley Value on Log-Odds)", font=dict(size=11, color="#64748b", family="DM Sans, sans-serif")),
             showgrid=True,
             gridcolor="#162032",
             zeroline=True,
@@ -116,7 +116,7 @@ def compute_local_shap(features_dict, top_k=8):
         ),
         yaxis=dict(
             showgrid=False,
-            tickfont=dict(size=11, color="#cbd5e1", family="DM Sans")
+            tickfont=dict(size=11, color="#cbd5e1", family="DM Sans, sans-serif")
         ),
         annotations=[
             dict(
@@ -124,7 +124,7 @@ def compute_local_shap(features_dict, top_k=8):
                 showarrow=False,
                 xref="paper", yref="paper",
                 x=0.5, y=1.12,
-                font=dict(color="#94a3b8", size=11, family="DM Sans")
+                font=dict(color="#94a3b8", size=11, family="DM Sans, sans-serif")
             )
         ]
     )

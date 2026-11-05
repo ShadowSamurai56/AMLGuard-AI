@@ -66,14 +66,14 @@ def render_benchmarks_view():
                 ))
 
             fig_bar.update_layout(
-                title=dict(text="Model Discriminative Power (AUC-PR ± Std Over 5 Seeds)", font=dict(family="DM Sans", size=14)),
+                title=dict(text="Model Discriminative Power (AUC-PR ± Std Over 5 Seeds)", font=dict(family="DM Sans, sans-serif", size=14)),
                 paper_bgcolor="#0b0f17",
                 plot_bgcolor="#0b0f17",
                 barmode="group",
                 height=380,
                 yaxis=dict(title="AUC-PR", range=[0, 1.05], gridcolor="#1e293b"),
                 xaxis=dict(title="Evaluation Configuration", gridcolor="#1e293b"),
-                font=dict(family="DM Sans", color="#cbd5e1"),
+                font=dict(family="DM Sans, sans-serif", color="#cbd5e1"),
                 legend=dict(bgcolor="rgba(15, 23, 42, 0.7)")
             )
             st.plotly_chart(fig_bar, use_container_width=True)
@@ -129,24 +129,27 @@ def render_benchmarks_view():
                     marker_color="#f43f5e"
                 ))
                 fig_split.update_layout(
-                    title=dict(text="Concept Drift Degradation: Random Split vs Time-Respecting Split", font=dict(family="DM Sans", size=14)),
+                    title=dict(text="Concept Drift Degradation: Random Split vs Time-Respecting Split", font=dict(family="DM Sans, sans-serif", size=14)),
                     paper_bgcolor="#0b0f17",
                     plot_bgcolor="#0b0f17",
                     barmode="group",
                     height=380,
                     yaxis=dict(title="AUC-PR", range=[0, 1.15], gridcolor="#1e293b"),
-                    font=dict(family="DM Sans", color="#cbd5e1"),
+                    font=dict(family="DM Sans, sans-serif", color="#cbd5e1"),
                     legend=dict(bgcolor="rgba(15, 23, 42, 0.7)")
                 )
                 st.plotly_chart(fig_split, use_container_width=True)
 
             with col2:
                 st.markdown("### 📉 Operational Drift Analysis")
+                rf_drop = df_split[df_split["model"] == "Random Forest"]["relative_drop_pct"].iloc[0]
+                xgb_drop = df_split[df_split["model"] == "XGBoost"]["relative_drop_pct"].iloc[0]
+                gs_drop = df_split[df_split["model"] == "GraphSAGE"]["relative_drop_pct"].iloc[0]
+                gat_drop = df_split[df_split["model"] == "GAT"]["relative_drop_pct"].iloc[0]
+
                 st.markdown(
-                    """
-                    - **Ensemble Stability:** Random Forest and XGBoost maintained superior temporal stability, with an AUC-PR drop of only **~20%** between time steps.
-                    - **Graph Neural Network Decay:** GraphSAGE and GAT architectures degraded by **51% to 62%**, demonstrating that message passing models require continuous dynamic retraining in live streams.
-                    """
+                    f"- **Ensemble Stability:** Random Forest and XGBoost maintained superior temporal stability, with an AUC-PR drop of only **~{rf_drop:.0f}%** ({rf_drop:.1f}% and {xgb_drop:.1f}%) between time steps.\n"
+                    f"- **Graph Neural Network Decay:** GraphSAGE and GAT architectures degraded by **{gs_drop:.1f}% to {gat_drop:.1f}%**, demonstrating that message passing models require continuous dynamic retraining in live streams."
                 )
                 df_split_display = df_split.copy()
                 df_split_display["random_auc_pr_mean"] = df_split_display["random_auc_pr_mean"].apply(lambda v: f"{v:.4f}")
@@ -180,25 +183,48 @@ def render_benchmarks_view():
                 ))
 
             fig_typo.update_layout(
-                title=dict(text="Typology Detection Rate (Mean Recall % on Test Partition)", font=dict(family="DM Sans", size=14)),
+                title=dict(text="Typology Detection Rate (Mean Recall % on Test Partition)", font=dict(family="DM Sans, sans-serif", size=14)),
                 paper_bgcolor="#0b0f17",
                 plot_bgcolor="#0b0f17",
                 barmode="group",
                 height=380,
                 yaxis=dict(title="Recall (%)", range=[0, 110], gridcolor="#1e293b"),
                 xaxis=dict(title="Money Laundering Typology", gridcolor="#1e293b"),
-                font=dict(family="DM Sans", color="#cbd5e1")
+                font=dict(family="DM Sans, sans-serif", color="#cbd5e1")
             )
             st.plotly_chart(fig_typo, use_container_width=True)
 
+            # Compute typology summary metrics dynamically from df_typo
+            seed_cols = ["k_seed_0", "k_seed_1", "k_seed_42", "k_seed_123", "k_seed_2024"]
+
+            def get_typo_stats(m_name, a_type):
+                sub = df_typo[(df_typo["model"] == m_name) & (df_typo["alert_type"] == a_type)]
+                if sub.empty:
+                    return {"n": 0, "hits": 0, "trials": 0, "mean_pct": 0.0, "mean_hits": 0.0}
+                r = sub.iloc[0]
+                hits = sum(int(r[c]) for c in seed_cols if c in r)
+                n = int(r["n"])
+                trials = n * len(seed_cols)
+                mean_pct = float(r["mean_recall"]) * 100
+                mean_hits = hits / len(seed_cols)
+                return {"n": n, "hits": hits, "trials": trials, "mean_pct": mean_pct, "mean_hits": mean_hits}
+
+            gs_cyc = get_typo_stats("GraphSAGE", "cycle")
+            rf_cyc = get_typo_stats("Random Forest", "cycle")
+            gs_fi = get_typo_stats("GraphSAGE", "fan_in")
+            rf_fi = get_typo_stats("Random Forest", "fan_in")
+            gs_fo = get_typo_stats("GraphSAGE", "fan_out")
+            rf_fo = get_typo_stats("Random Forest", "fan_out")
+
+            tot_sars = gs_cyc["n"] + gs_fi["n"] + gs_fo["n"]
+            tot_trials = gs_cyc["trials"] + gs_fi["trials"] + gs_fo["trials"]
+
             st.markdown(
-                """
-                > **Evaluation Breakdown Across Typologies (4 Cycles, 6 Fan-In, 6 Fan-Out):**
-                > The held-out test split contains **16 unique SAR accounts** ($n=4$ circular routing rings, $n=6$ fan-in gathering schemes, $n=6$ fan-out scattering schemes) evaluated across 5 random seeds ($16 \times 5 = 80$ total evaluation trials):
-                > - **Circular Routing ($n=4$ rings, 20 total evaluations):** GraphSAGE detects **16 of 20 ring trials (80.0% recall, mean 3.2 / 4)** versus Random Forest detecting **5 of 20 ring trials (25.0% recall, mean 1.0 / 4)**.
-                > - **Fan-In / Structuring ($n=6$ accounts, 30 total evaluations):** GraphSAGE detects **21 of 30 (70.0% recall)** versus Random Forest detecting **20 of 30 (66.7% recall)**.
-                > - **Fan-Out / Scattering ($n=6$ accounts, 30 total evaluations):** GraphSAGE detects **20 of 30 (66.7% recall)** versus Random Forest detecting **18 of 30 (60.0% recall)**.
-                """
+                f"> **Evaluation Breakdown Across Typologies ({gs_cyc['n']} Cycles, {gs_fi['n']} Fan-In, {gs_fo['n']} Fan-Out):**\n"
+                f"> The held-out test split contains **{tot_sars} unique SAR accounts** ($n={gs_cyc['n']}$ circular routing rings, $n={gs_fi['n']}$ fan-in gathering schemes, $n={gs_fo['n']}$ fan-out scattering schemes) evaluated across {len(seed_cols)} random seeds ({tot_trials} total evaluation trials):\n"
+                f"> - **Circular Routing ($n={gs_cyc['n']}$ rings, {gs_cyc['trials']} total evaluations):** GraphSAGE detects **{gs_cyc['hits']} of {gs_cyc['trials']} ring trials ({gs_cyc['mean_pct']:.1f}% recall, mean {gs_cyc['mean_hits']:.1f} / {gs_cyc['n']})** versus Random Forest detecting **{rf_cyc['hits']} of {rf_cyc['trials']} ring trials ({rf_cyc['mean_pct']:.1f}% recall, mean {rf_cyc['mean_hits']:.1f} / {rf_cyc['n']})**.\n"
+                f"> - **Fan-In / Structuring ($n={gs_fi['n']}$ accounts, {gs_fi['trials']} total evaluations):** GraphSAGE detects **{gs_fi['hits']} of {gs_fi['trials']} ({gs_fi['mean_pct']:.1f}% recall)** versus Random Forest detecting **{rf_fi['hits']} of {rf_fi['trials']} ({rf_fi['mean_pct']:.1f}% recall)**.\n"
+                f"> - **Fan-Out / Scattering ($n={gs_fo['n']}$ accounts, {gs_fo['trials']} total evaluations):** GraphSAGE detects **{gs_fo['hits']} of {gs_fo['trials']} ({gs_fo['mean_pct']:.1f}% recall)** versus Random Forest detecting **{rf_fo['hits']} of {rf_fo['trials']} ({rf_fo['mean_pct']:.1f}% recall)**."
             )
             df_typo_display = df_typo.copy()
             df_typo_display["total_hits"] = (
