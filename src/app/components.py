@@ -23,7 +23,7 @@ def render_kpi_bar(acct_id, ground_truth, typology, consensus_prob, risk_level, 
 
     # Split indicator
     if split == "TEST":
-        split_badge = '<span style="background: rgba(59, 130, 246, 0.12); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); font-size: 0.72rem; font-weight: 600; padding: 0.2rem 0.6rem; border-radius: 4px; font-family: \'JetBrains Mono\';">HOLD-OUT TEST SET</span>'
+        split_badge = '<span style="background: rgba(59, 130, 246, 0.12); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); font-size: 0.72rem; font-weight: 600; padding: 0.2rem 0.6rem; border-radius: 4px; font-family: \'JetBrains Mono\';">HELD-OUT TEST SET</span>'
     elif split == "VAL":
         split_badge = '<span style="background: rgba(148, 163, 184, 0.12); color: #94a3b8; border: 1px solid rgba(148, 163, 184, 0.25); font-size: 0.72rem; font-weight: 600; padding: 0.2rem 0.6rem; border-radius: 4px; font-family: \'JetBrains Mono\';">VALIDATION SET</span>'
     else:
@@ -58,9 +58,9 @@ def render_kpi_bar(acct_id, ground_truth, typology, consensus_prob, risk_level, 
 </div>
 <div style="display: flex; gap: 2.2rem; text-align: right; flex-wrap: wrap;">
 <div>
-<div style="font-size: 0.7rem; color: #64748b; text-transform: uppercase; font-weight: 600; letter-spacing: 0.04em;" title="Validation AUC-PR weighted: RF (35%), XGB (35%), GraphSAGE (20%), GAT (5%), LogReg (5%)">CONSENSUS RISK SCORE <span style="font-size: 0.72rem; color: #94a3b8; cursor: help;">ⓘ</span></div>
+<div style="font-size: 0.7rem; color: #64748b; text-transform: uppercase; font-weight: 600; letter-spacing: 0.04em;" title="Heuristic weights set from validation AUC-PR ranking: RF (35%), XGB (35%), GraphSAGE (20%), GAT (5%), LogReg (5%)">CONSENSUS RISK SCORE <span style="font-size: 0.72rem; color: #94a3b8; cursor: help;">ⓘ</span></div>
 <div style="font-size: 1.55rem; font-weight: 700; color: #f8fafc; font-family: 'JetBrains Mono', monospace;">{consensus_prob * 100:.1f} <span style="font-size: 0.85rem; color: #64748b; font-weight: 500;">/ 100</span></div>
-<div style="font-size: 0.66rem; color: #64748b; margin-top: 1px;">AUC-PR Weighted (Trees 70%, Graph 25%, Linear 5%)</div>
+<div style="font-size: 0.66rem; color: #64748b; margin-top: 1px;">Weights set from validation AUC-PR ranking</div>
 </div>
 <div>
 <div style="font-size: 0.7rem; color: #64748b; text-transform: uppercase; font-weight: 600; letter-spacing: 0.04em;">TOTAL GROSS FLOW</div>

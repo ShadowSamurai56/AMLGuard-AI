@@ -193,10 +193,25 @@ def render_benchmarks_view():
 
             st.markdown(
                 """
-                > **Typology Coverage:** Random Forest achieves higher precision on tabular structuring, but GraphSAGE excels on complex relational topologies, achieving **80% recall on circular shell account chains** where isolated tabular features appear benign.
+                > **Typology Sample Context ($N=16$ Test Positives):** Evaluations are conducted on held-out test set positives ($n=4$ cycles, $n=6$ fan-in, $n=6$ fan-out) averaged across 5 random seeds. While Random Forest achieves higher precision on tabular structuring, GraphSAGE demonstrates structural sensitivity on relational topologies, detecting **80% of circular routing test rings (3.2 / 4 rings on average)** compared to only **25% (1 / 4 rings)** detected by Random Forest.
                 """
             )
-            st.dataframe(df_typo, use_container_width=True, hide_index=True)
+            df_typo_display = df_typo.copy()
+            df_typo_display["mean_recall"] = df_typo_display["mean_recall"].apply(lambda v: f"{v*100:.1f}%")
+            df_typo_display["min_recall"] = df_typo_display["min_recall"].apply(lambda v: f"{v*100:.1f}%")
+            df_typo_display["max_recall"] = df_typo_display["max_recall"].apply(lambda v: f"{v*100:.1f}%")
+            st.dataframe(
+                df_typo_display[["model", "alert_type", "n", "mean_recall", "min_recall", "max_recall"]].rename(columns={
+                    "model": "Model",
+                    "alert_type": "Typology",
+                    "n": "n (Test Positives)",
+                    "mean_recall": "Mean Recall",
+                    "min_recall": "Min Recall",
+                    "max_recall": "Max Recall"
+                }),
+                use_container_width=True,
+                hide_index=True
+            )
 
     # ---------------------------------------------------------
     # TAB 4: Statistical Significance

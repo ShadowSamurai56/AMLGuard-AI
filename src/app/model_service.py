@@ -207,28 +207,38 @@ def predict_amlsim_account(acct_id, features_df):
         disposition = "AUTO-CLEARED"
         band = "LOW"
 
+    # Dual-Tier Structural Policy Override:
+    # If both GNN models strongly detect relational coordination (GraphSAGE >= 0.75 and GAT >= 0.75),
+    # or GraphSAGE >= 0.80 while trees miss it (< 0.40), escalate to SAR via structural override
+    # so that circular wash-trading is not drowned out by tabular trees in the weighted average.
+    structural_override = False
+    gs_score = scores.get("GraphSAGE", 0.0)
+    gat_score = scores.get("GAT (Tuned)", 0.0)
+    rf_score = scores.get("Random Forest", 0.0)
+    xgb_score = scores.get("XGBoost", 0.0)
+    lr_score = scores.get("Logistic Regression", 0.0)
+
+    if (gs_score >= 0.75 and gat_score >= 0.75) or (gs_score >= 0.80 and rf_score < 0.40 and xgb_score < 0.20):
+        structural_override = True
+        disposition = "ESCALATE TO SAR (GNN OVERRIDE)"
+        band = "HIGH"
+
     # Automated model reconciliation note
     divergence_note = None
-    if (max_prob - min_prob) >= 0.35:
-        gs_score = scores.get("GraphSAGE", 0.0)
-        gat_score = scores.get("GAT (Tuned)", 0.0)
-        rf_score = scores.get("Random Forest", 0.0)
-        xgb_score = scores.get("XGBoost", 0.0)
-        lr_score = scores.get("Logistic Regression", 0.0)
-
-        if gs_score > 0.65 and rf_score < 0.4:
-            if lr_score > 0.6:
-                divergence_note = (
-                    f"Model Divergence: Graph models (GraphSAGE: {gs_score*100:.1f}%, GAT: {gat_score*100:.1f}%) "
-                    f"flagged coordinated circular routing missed by tree ensembles (RF: {rf_score*100:.1f}%, XGB: {xgb_score*100:.1f}%). "
-                    f"Note: Linear baseline elevation (LogReg: {lr_score*100:.1f}%) is driven primarily by gross volume rather than network topology."
-                )
-            else:
-                divergence_note = (
-                    f"Relational Flag: GraphSAGE ({gs_score*100:.1f}%) detected coordinated multi-hop network patterns "
-                    f"invisible to tree ensembles (RF: {rf_score*100:.1f}%, XGB: {xgb_score*100:.1f}%)."
-                )
-        elif lr_score > 0.6 and xgb_score < 0.2 and gs_score < 0.4:
+    if structural_override:
+        if lr_score > 0.6:
+            divergence_note = (
+                f"Dual-Tier Policy Override: Graph models (GraphSAGE: {gs_score*100:.1f}%, GAT: {gat_score*100:.1f}%) "
+                f"flagged coordinated circular routing missed by tree ensembles (RF: {rf_score*100:.1f}%, XGB: {xgb_score*100:.1f}%), "
+                f"triggering structural SAR escalation. Note: Linear baseline elevation (LogReg: {lr_score*100:.1f}%) is driven primarily by gross volume rather than network structure."
+            )
+        else:
+            divergence_note = (
+                f"Dual-Tier Policy Override: GraphSAGE ({gs_score*100:.1f}%) detected coordinated multi-hop network patterns "
+                f"missed by tree ensembles (RF: {rf_score*100:.1f}%, XGB: {xgb_score*100:.1f}%), triggering structural SAR escalation."
+            )
+    elif (max_prob - min_prob) >= 0.35:
+        if lr_score > 0.6 and xgb_score < 0.2 and gs_score < 0.4:
             divergence_note = (
                 f"Volume vs. Structure Divergence: Linear baseline (LogReg: {lr_score*100:.1f}%) is elevated by gross transfer volume, "
                 f"whereas gradient-boosted trees (XGB: {xgb_score*100:.1f}%) and GNNs clear the entity due to normal turnover ratios."
@@ -238,6 +248,11 @@ def predict_amlsim_account(acct_id, features_df):
                 f"Behavioral Anomaly: Tree ensemble (RF: {rf_score*100:.1f}%) flagged local feature surges (velocity / counterparty burst) "
                 f"that do not exhibit multi-hop graph coordination."
             )
+    elif min_prob >= 0.60:
+        divergence_note = (
+            f"Consensus Agreement: Both tabular tree ensembles (RF: {rf_score*100:.1f}%, XGB: {xgb_score*100:.1f}%) "
+            f"and graph models (GraphSAGE: {gs_score*100:.1f}%) strongly align on high illicit probability."
+        )
 
     return {
         "acct_id": acct_id,
@@ -245,7 +260,7 @@ def predict_amlsim_account(acct_id, features_df):
         "scores": scores,
         "max_prob": max_prob,
         "consensus_prob": consensus_prob,
-        "consensus_rationale": "Weighted by validation AUC-PR (Tree Ensembles: 70%, Graph Models: 25%, Linear: 5%)",
+        "consensus_rationale": "Heuristic weights set from validation AUC-PR ranking (Tree Ensembles: 70%, Graph Models: 25%, Linear Baseline: 5%)",
         "risk_level": band,
         "disposition": disposition,
         "divergence_note": divergence_note,
