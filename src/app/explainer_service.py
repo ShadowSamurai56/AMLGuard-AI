@@ -90,7 +90,7 @@ def compute_local_shap(features_dict, top_k=8):
         ),
         text=[f"Val: {v:,.1f}" if abs(v) > 10 else f"Val: {v:.2f}" for v in df_shap["value"]],
         textposition="outside",
-        textfont=dict(size=10, family="JetBrains Mono", color="#94a3b8"),
+        textfont=dict(size=10, family="JetBrains Mono, monospace", color="#94a3b8"),
         hoverinfo="text",
         hovertext=[
             f"<b>{row['feature_name']}</b><br>"
@@ -112,7 +112,7 @@ def compute_local_shap(features_dict, top_k=8):
             gridcolor="#162032",
             zeroline=True,
             zerolinecolor="#334155",
-            tickfont=dict(size=10, color="#94a3b8", family="JetBrains Mono")
+            tickfont=dict(size=10, color="#94a3b8", family="JetBrains Mono, monospace")
         ),
         yaxis=dict(
             showgrid=False,

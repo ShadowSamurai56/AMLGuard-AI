@@ -16,11 +16,26 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-from src.app.config import APP_VERSION
+from src.app.config import APP_VERSION, BUILD_ID
 from src.app.theme import apply_theme, render_header
 from src.app.views.investigation import render_investigation_view
 from src.app.views.benchmarks import render_benchmarks_view
 from src.app.views.about import render_about_view
+import subprocess
+import datetime
+
+
+def get_build_stamp():
+    """Returns 'build <short git hash> · <UTC date>', falling back to BUILD_ID."""
+    try:
+        short_hash = subprocess.check_output(
+            ["git", "rev-parse", "--short", "HEAD"],
+            stderr=subprocess.DEVNULL
+        ).decode("utf-8").strip()
+    except Exception:
+        short_hash = BUILD_ID
+    utc_date = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d")
+    return f"build {short_hash} · {utc_date}"
 
 
 def main():
@@ -80,9 +95,10 @@ def main():
 
         st.markdown("<br>", unsafe_allow_html=True)
         footer_html = textwrap.dedent(f"""
-        <div style="font-size: 0.72rem; color: #64748b; line-height: 1.4;">
+        <div style="font-size: 0.72rem; color: #64748b; line-height: 1.4; font-family: 'JetBrains Mono', monospace;">
             <b>AMLGuard AI Platform</b><br>
             {APP_VERSION} · Research Prototype<br>
+            <span style="color: #475569;">{get_build_stamp()}</span><br>
             Financial Crime Analytics Prototype
         </div>
         """).strip()

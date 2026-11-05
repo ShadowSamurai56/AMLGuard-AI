@@ -269,7 +269,7 @@ def render_interactive_graph(G, target_id, dataset="AMLSim", gnn_edge_importance
         mode="markers+text",
         text=[f"#{n}" if G.nodes[n].get("is_target") or G.nodes[n].get("is_sar") == 1 else "" for n in G.nodes()],
         textposition="top center",
-        textfont=dict(color="#cbd5e1", size=10, family="JetBrains Mono"),
+        textfont=dict(color="#cbd5e1", size=10, family="JetBrains Mono, monospace"),
         hoverinfo="text",
         hovertext=node_text,
         marker=dict(

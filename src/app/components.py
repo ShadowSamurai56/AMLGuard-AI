@@ -16,18 +16,18 @@ def render_kpi_bar(acct_id, ground_truth, typology, consensus_prob, risk_level, 
     
     # Ground truth indicator
     sar_badge = (
-        '<span style="background: rgba(244, 63, 94, 0.12); color: #fb7185; border: 1px solid rgba(244, 63, 94, 0.3); font-size: 0.72rem; font-weight: 600; padding: 0.2rem 0.6rem; border-radius: 4px; font-family: \'JetBrains Mono\';">CONFIRMED SAR</span>'
+        '<span style="background: rgba(244, 63, 94, 0.12); color: #fb7185; border: 1px solid rgba(244, 63, 94, 0.3); font-size: 0.72rem; font-weight: 600; padding: 0.2rem 0.6rem; border-radius: 4px; font-family: \'JetBrains Mono\', monospace;">CONFIRMED SAR</span>'
         if ground_truth == 1
-        else '<span style="background: rgba(16, 185, 129, 0.1); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.25); font-size: 0.72rem; font-weight: 600; padding: 0.2rem 0.6rem; border-radius: 4px; font-family: \'JetBrains Mono\';">VERIFIED NORMAL</span>'
+        else '<span style="background: rgba(16, 185, 129, 0.1); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.25); font-size: 0.72rem; font-weight: 600; padding: 0.2rem 0.6rem; border-radius: 4px; font-family: \'JetBrains Mono\', monospace;">VERIFIED NORMAL</span>'
     )
 
     # Split indicator
     if split == "TEST":
-        split_badge = '<span style="background: rgba(59, 130, 246, 0.12); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); font-size: 0.72rem; font-weight: 600; padding: 0.2rem 0.6rem; border-radius: 4px; font-family: \'JetBrains Mono\';">HELD-OUT TEST SET</span>'
+        split_badge = '<span style="background: rgba(59, 130, 246, 0.12); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); font-size: 0.72rem; font-weight: 600; padding: 0.2rem 0.6rem; border-radius: 4px; font-family: \'JetBrains Mono\', monospace;">HELD-OUT TEST SET</span>'
     elif split == "VAL":
-        split_badge = '<span style="background: rgba(148, 163, 184, 0.12); color: #94a3b8; border: 1px solid rgba(148, 163, 184, 0.25); font-size: 0.72rem; font-weight: 600; padding: 0.2rem 0.6rem; border-radius: 4px; font-family: \'JetBrains Mono\';">VALIDATION SET</span>'
+        split_badge = '<span style="background: rgba(148, 163, 184, 0.12); color: #94a3b8; border: 1px solid rgba(148, 163, 184, 0.25); font-size: 0.72rem; font-weight: 600; padding: 0.2rem 0.6rem; border-radius: 4px; font-family: \'JetBrains Mono\', monospace;">VALIDATION SET</span>'
     else:
-        split_badge = '<span style="background: rgba(148, 163, 184, 0.12); color: #94a3b8; border: 1px solid rgba(148, 163, 184, 0.25); font-size: 0.72rem; font-weight: 600; padding: 0.2rem 0.6rem; border-radius: 4px; font-family: \'JetBrains Mono\';">TRAINING SET</span>'
+        split_badge = '<span style="background: rgba(148, 163, 184, 0.12); color: #94a3b8; border: 1px solid rgba(148, 163, 184, 0.25); font-size: 0.72rem; font-weight: 600; padding: 0.2rem 0.6rem; border-radius: 4px; font-family: \'JetBrains Mono\', monospace;">TRAINING SET</span>'
 
     # Disposition styling
     if "ESCALATE" in disposition:
@@ -37,8 +37,8 @@ def render_kpi_bar(acct_id, ground_truth, typology, consensus_prob, risk_level, 
     else:
         disp_style = "background: rgba(16, 185, 129, 0.12); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3);"
 
-    disp_badge = f'<span style="{disp_style} font-size: 0.72rem; font-weight: 600; padding: 0.2rem 0.6rem; border-radius: 4px; font-family: \'JetBrains Mono\';">{disposition}</span>'
-    typology_badge = f'<span style="background: rgba(139, 92, 246, 0.12); color: #c084fc; border: 1px solid rgba(139, 92, 246, 0.3); font-size: 0.72rem; font-weight: 600; padding: 0.2rem 0.6rem; border-radius: 4px; font-family: \'JetBrains Mono\';">{typ_cfg["badge"]}</span>'
+    disp_badge = f'<span style="{disp_style} font-size: 0.72rem; font-weight: 600; padding: 0.2rem 0.6rem; border-radius: 4px; font-family: \'JetBrains Mono\', monospace;">{disposition}</span>'
+    typology_badge = f'<span style="background: rgba(139, 92, 246, 0.12); color: #c084fc; border: 1px solid rgba(139, 92, 246, 0.3); font-size: 0.72rem; font-weight: 600; padding: 0.2rem 0.6rem; border-radius: 4px; font-family: \'JetBrains Mono\', monospace;">{typ_cfg["badge"]}</span>'
 
     note_html = ""
     if divergence_note:
@@ -121,7 +121,7 @@ def render_model_comparison_cards(scores, ground_truth):
             card_html = textwrap.dedent(f"""<div style="background: #0f172a; border: 1px solid #1e293b; border-radius: 10px; padding: 1rem; height: 100%;">
 <div style="display: flex; justify-content: space-between; align-items: center;">
 <span style="font-size: 0.68rem; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;">{family}</span>
-<span style="font-size: 0.68rem; font-family: 'JetBrains Mono'; font-weight: 600; padding: 0.15rem 0.45rem; border-radius: 4px; background: {badge_bg}; color: {badge_color}; border: 1px solid {badge_border};">{badge_text}</span>
+<span style="font-size: 0.68rem; font-family: 'JetBrains Mono', monospace; font-weight: 600; padding: 0.15rem 0.45rem; border-radius: 4px; background: {badge_bg}; color: {badge_color}; border: 1px solid {badge_border};">{badge_text}</span>
 </div>
 <div style="font-size: 0.95rem; font-weight: 600; color: #e2e8f0; margin-top: 0.3rem;">
 {icon} {model_name}
