@@ -191,11 +191,46 @@ def render_investigation_view():
         with col_shap:
             st.markdown("### Model Explainability & Feature Attribution")
 
-            tab_shap, tab_features = st.tabs(["TreeSHAP Feature Drivers", "Raw Behavioral Metrics"])
+            tab_shap, tab_logreg, tab_features = st.tabs([
+                "TreeSHAP Feature Drivers",
+                "Logistic Regression Drivers",
+                "Raw Behavioral Metrics"
+            ])
 
             with tab_shap:
                 fig_shap = compute_local_shap(feat_dict, top_k=7)
                 st.plotly_chart(fig_shap, use_container_width=True)
+
+                lr_expl = prediction.get("logreg_expl")
+                if lr_expl and lr_expl.get("top_3"):
+                    top_items = lr_expl["top_3"]
+                    top_str = " · ".join([
+                        f"<b>{it['label']}</b>: {it['contribution']:+.3f} ({it['share_pct']:.1f}%)"
+                        for it in top_items
+                    ])
+                    st.markdown(
+                        f'<div style="font-size: 0.76rem; color: #94a3b8; margin-top: -8px; padding: 0.5rem 0.75rem; background: #0f172a; border: 1px solid #1e293b; border-radius: 6px;">'
+                        f'<span style="color: #60a5fa; font-weight: 600;">Logistic Regression: top feature contributions:</span><br>{top_str}'
+                        f'</div>',
+                        unsafe_allow_html=True
+                    )
+
+            with tab_logreg:
+                st.markdown("##### Logistic Regression: top feature contributions")
+                st.caption("Exact linear feature decomposition: $z = \\beta_0 + \\sum \\beta_i x_i$. Contribution = $\\beta_i \\cdot x_{\\text{scaled}, i}$. Percentage denotes share of total absolute contribution.")
+                lr_expl = prediction.get("logreg_expl")
+                if lr_expl and lr_expl.get("top_3"):
+                    lr_rows = []
+                    for item in lr_expl["top_3"]:
+                        val = item["raw"]
+                        val_str = f"${val:,.2f}" if "amt" in item["feature"] else (f"{val:,.0f}" if isinstance(val, (int, float)) and val.is_integer() else f"{val:.4f}")
+                        lr_rows.append({
+                            "Feature Metric": item["label"],
+                            "Observed Value": val_str,
+                            "Signed Contribution": f"{item['contribution']:+.4f}",
+                            "Contribution Share": f"{item['share_pct']:.1f}%"
+                        })
+                    st.dataframe(pd.DataFrame(lr_rows), use_container_width=True, hide_index=True)
 
             with tab_features:
                 # Tabular feature inspection

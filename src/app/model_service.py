@@ -110,6 +110,73 @@ def load_elliptic_models():
 # -------------------------------------------------------------
 # Inference Functions
 # -------------------------------------------------------------
+def explain_logreg_account(acct_id, features_df):
+    """
+    Computes exact linear feature contributions for Logistic Regression on an account:
+    contribution_i = coefficient_i * scaled_feature_i using the exact fitted
+    StandardScaler and LogisticRegression model.
+    Returns: dict containing 'top_3' features, 'top_feature', 'clause', and 'total_abs'.
+    """
+    models = load_amlsim_models()
+    if "lr" not in models or "scaler" not in models:
+        return None
+
+    row = features_df[features_df["acct_id"] == acct_id]
+    if row.empty:
+        return None
+
+    label_cols = [c for c in row.columns if c.startswith("label_")]
+    X_raw = row.drop(columns=label_cols + ["acct_id"]).copy()
+    for col in X_raw.columns:
+        if not pd.api.types.is_numeric_dtype(X_raw[col]):
+            X_raw[col] = 0.0
+
+    feature_names = list(X_raw.columns)
+    X_mat = X_raw.values.astype(float)
+    scaler = models["scaler"]
+    lr = models["lr"]
+
+    X_scaled = scaler.transform(X_mat)[0]
+    coefs = lr.coef_[0]
+    contribs = coefs * X_scaled
+    total_abs = float(np.sum(np.abs(contribs)))
+
+    VOLUME_KEYS = {"out_total_amt", "in_total_amt", "net_flow"}
+    from src.app.config import FEATURE_LABELS_AMLSIM
+
+    items = []
+    for f, c, raw, sc in zip(feature_names, contribs, X_mat[0], X_scaled):
+        lbl = FEATURE_LABELS_AMLSIM.get(f, f)
+        share = (abs(c) / total_abs * 100.0) if total_abs > 0 else 0.0
+        items.append({
+            "feature": f,
+            "label": lbl,
+            "raw": float(raw),
+            "scaled": float(sc),
+            "contribution": float(c),
+            "abs_contribution": float(abs(c)),
+            "share_pct": float(share),
+            "is_volume": f in VOLUME_KEYS
+        })
+
+    # Rank by positive contribution (pushing log-odds toward fraud)
+    items_by_pos = sorted(items, key=lambda x: x["contribution"], reverse=True)
+    top_feature = items_by_pos[0]
+    top_3 = items_by_pos[:3]
+
+    prob = float(lr.predict_proba(scaler.transform(X_mat))[0, 1])
+
+    clause = f"Linear baseline elevation (LogReg: {prob*100:.1f}%) is driven mainly by {top_feature['label']} ({top_feature['share_pct']:.1f}% of its total contribution)."
+
+    return {
+        "prob": prob,
+        "top_3": top_3,
+        "top_feature": top_feature,
+        "clause": clause,
+        "total_abs": total_abs
+    }
+
+
 def predict_amlsim_account(acct_id, features_df, typology=None):
     """
     Computes predictions for a specific account ID across all 5 models.
@@ -238,6 +305,10 @@ def predict_amlsim_account(acct_id, features_df, typology=None):
     # Automated model reconciliation note
     divergence_note = None
 
+    # Compute exact linear feature contributions for Logistic Regression
+    logreg_expl = explain_logreg_account(acct_id, features_df)
+    lr_clause = logreg_expl["clause"] if logreg_expl else f"Linear baseline (LogReg: {lr_score*100:.1f}%) is elevated."
+
     if typology == "cycle":
         pattern_phrase = "coordinated circular routing rings (closed wash-trading cycles)"
     elif typology == "fan_in":
@@ -252,7 +323,7 @@ def predict_amlsim_account(acct_id, features_df, typology=None):
             divergence_note = (
                 f"Dual-Tier Policy Override: Graph models (GraphSAGE: {gs_score*100:.1f}%, GAT: {gat_score*100:.1f}%) "
                 f"flagged {pattern_phrase} missed by tree ensembles (RF: {rf_score*100:.1f}%, XGB: {xgb_score*100:.1f}%), "
-                f"triggering structural SAR escalation. Note: Linear baseline elevation (LogReg: {lr_score*100:.1f}%) is driven primarily by gross volume rather than network structure."
+                f"triggering structural SAR escalation. Note: {lr_clause}"
             )
         else:
             divergence_note = (
@@ -267,8 +338,8 @@ def predict_amlsim_account(acct_id, features_df, typology=None):
         )
     elif lr_score > 0.60 and xgb_score < 0.25 and gs_score < 0.50:
         divergence_note = (
-            f"Volume vs. Structure Divergence: Linear baseline (LogReg: {lr_score*100:.1f}%) is elevated by gross transfer volume, "
-            f"whereas gradient-boosted trees (XGB: {xgb_score*100:.1f}%) and GNNs clear the entity due to normal turnover ratios and benign counterparty topology."
+            f"Linear vs. Structure Divergence: {lr_clause} "
+            f"Tree ensembles (XGB: {xgb_score*100:.1f}%) and GNNs clear the entity due to normal turnover ratios and benign counterparty topology."
         )
     elif rf_score > 0.65 and gs_score < 0.40 and gat_score < 0.40:
         divergence_note = (
@@ -292,6 +363,7 @@ def predict_amlsim_account(acct_id, features_df, typology=None):
         "disposition": disposition,
         "divergence_note": divergence_note,
         "features": X_raw.iloc[0].to_dict(),
+        "logreg_expl": logreg_expl,
     }
 
 
