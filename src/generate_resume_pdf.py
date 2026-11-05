@@ -233,7 +233,7 @@ html_content = """<!DOCTYPE html>
     </div>
     <ul>
       <li>Architected an end-to-end AML transaction surveillance engine evaluating <strong>Graph Neural Networks (GraphSAGE, GAT)</strong> vs. <strong>classical tree ensembles (Random Forest, XGBoost)</strong> across 5 random seeds on <strong>AMLSim</strong> and <strong>Elliptic Bitcoin (203k txns)</strong>.</li>
-      <li>Discovered that 2-hop message-passing enables <strong>GraphSAGE to achieve 80% recall on complex circular routing rings</strong> (n=4 test rings, vs. 25% for Random Forest), while tree models delivered superior global precision and <strong>AUC-PR (0.8214 vs. 0.5442)</strong> on tabular account behaviors.</li>
+      <li>Discovered that 2-hop message-passing enables <strong>GraphSAGE to achieve 80% recall on complex circular routing rings</strong> (16/20 detections across 5 seeds, vs. 25% for Random Forest), while tree models delivered superior global precision and <strong>AUC-PR (0.8214 vs. 0.5442)</strong> on tabular account behaviors.</li>
       <li>Formulated a zero-leakage temporal split pipeline (steps 1–34 train, 35–49 test); analyzed why GNNs degraded by <strong>51.2%</strong> under cryptocurrency concept drift compared to only <strong>20.1%</strong> degradation in gradient-boosted trees.</li>
       <li>Engineered an interactive <strong>Streamlit workbench</strong> rendering 1-hop Plotly ego-networks, real-time multi-model consensus, and <strong>TreeSHAP / GNNExplainer</strong> feature attributions fulfilling regulatory model governance standards (SR 11-7).</li>
     </ul>

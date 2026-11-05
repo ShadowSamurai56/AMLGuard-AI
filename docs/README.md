@@ -17,3 +17,4 @@ This directory contains comprehensive research documentation, regulatory model v
 
 ### 2. Professional Resume Artifact
 - **`Raghav_Krishan_Aggarwal_Resume.pdf`**: Single-page, ATS-optimized technical resume highlighting the AMLGuard AI architecture, quantifiable metrics (AUC-PR 0.8214 vs. 0.5442; 80% vs. 25% cycle recall across $n=4$ test rings), and verified GitHub repository links.
+

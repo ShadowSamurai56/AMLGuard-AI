@@ -48,6 +48,11 @@ def render_about_view():
             2. **Explainability & SAR Audit Trail**
                - **Local Attribution:** Integrated **TreeSHAP** engine producing exact game-theoretic Shapley values on log-odds for every alert.
                - **Subnetwork Evidence:** **GNNExplainer** subgraph isolation highlighting the exact counterparty pathways responsible for deep graph alerts.
+
+            3. **Dual-Tier Policy Override (GNN Structural Veto)**
+               - **Design Rationale:** In a 70% tree / 25% graph weighted consensus, tabular models miss multi-hop wash trading, diluting ring scores (e.g., Account #96 scores 35.4%). The policy override escalates directly to SAR if both GNN models strongly detect topological coordination ($\text{GraphSAGE} \ge 0.75 \text{ and } \text{GAT} \ge 0.75$).
+               - **Empirical Validation:** On the 290 held-out test accounts, the override adds **1 circular routing ring** (increasing cycle recall from 50% to 75%) and **1 fan-in alert** (raising overall SAR recall from 68.8% to 81.2%), at a cost of **1 false positive escalation** among 274 normal accounts ($\text{FPR} = 0.36\%$).
+               - **Governance Limitation & Drift Risk:** The override grants veto escalation power to the GNNs—the very models that degraded **51.2% under temporal concept drift** on Elliptic. In high-drift production environments with evolving network topology, the override should trigger senior analyst review rather than automated filing.
             """
         )
 

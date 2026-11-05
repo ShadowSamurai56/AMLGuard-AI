@@ -218,7 +218,7 @@ def predict_amlsim_account(acct_id, features_df):
     xgb_score = scores.get("XGBoost", 0.0)
     lr_score = scores.get("Logistic Regression", 0.0)
 
-    if (gs_score >= 0.75 and gat_score >= 0.75) or (gs_score >= 0.80 and rf_score < 0.40 and xgb_score < 0.20):
+    if gs_score >= 0.75 and gat_score >= 0.75:
         structural_override = True
         disposition = "ESCALATE TO SAR (GNN OVERRIDE)"
         band = "HIGH"

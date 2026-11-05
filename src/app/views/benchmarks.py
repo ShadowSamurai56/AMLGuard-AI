@@ -193,21 +193,40 @@ def render_benchmarks_view():
 
             st.markdown(
                 """
-                > **Typology Sample Context ($N=16$ Test Positives):** Evaluations are conducted on held-out test set positives ($n=4$ cycles, $n=6$ fan-in, $n=6$ fan-out) averaged across 5 random seeds. While Random Forest achieves higher precision on tabular structuring, GraphSAGE demonstrates structural sensitivity on relational topologies, detecting **80% of circular routing test rings (3.2 / 4 rings on average)** compared to only **25% (1 / 4 rings)** detected by Random Forest.
+                > **Evaluation Breakdown Across Typologies (4 Cycles, 6 Fan-In, 6 Fan-Out):**
+                > The held-out test split contains **16 unique SAR accounts** ($n=4$ circular routing rings, $n=6$ fan-in gathering schemes, $n=6$ fan-out scattering schemes) evaluated across 5 random seeds ($16 \times 5 = 80$ total evaluation trials):
+                > - **Circular Routing ($n=4$ rings, 20 total evaluations):** GraphSAGE detects **16 of 20 ring trials (80.0% recall, mean 3.2 / 4)** versus Random Forest detecting **5 of 20 ring trials (25.0% recall, mean 1.0 / 4)**.
+                > - **Fan-In / Structuring ($n=6$ accounts, 30 total evaluations):** GraphSAGE detects **21 of 30 (70.0% recall)** versus Random Forest detecting **20 of 30 (66.7% recall)**.
+                > - **Fan-Out / Scattering ($n=6$ accounts, 30 total evaluations):** GraphSAGE detects **20 of 30 (66.7% recall)** versus Random Forest detecting **18 of 30 (60.0% recall)**.
                 """
             )
             df_typo_display = df_typo.copy()
+            df_typo_display["total_hits"] = (
+                df_typo_display["k_seed_0"] +
+                df_typo_display["k_seed_1"] +
+                df_typo_display["k_seed_42"] +
+                df_typo_display["k_seed_123"] +
+                df_typo_display["k_seed_2024"]
+            )
+            df_typo_display["total_trials"] = df_typo_display["n"] * 5
+            df_typo_display["hits_ratio"] = df_typo_display.apply(
+                lambda r: f"{r['total_hits']} / {r['total_trials']}", axis=1
+            )
             df_typo_display["mean_recall"] = df_typo_display["mean_recall"].apply(lambda v: f"{v*100:.1f}%")
             df_typo_display["min_recall"] = df_typo_display["min_recall"].apply(lambda v: f"{v*100:.1f}%")
             df_typo_display["max_recall"] = df_typo_display["max_recall"].apply(lambda v: f"{v*100:.1f}%")
+            df_typo_display["recall_range"] = df_typo_display.apply(
+                lambda r: f"{r['min_recall']} – {r['max_recall']}", axis=1
+            )
+
             st.dataframe(
-                df_typo_display[["model", "alert_type", "n", "mean_recall", "min_recall", "max_recall"]].rename(columns={
+                df_typo_display[["model", "alert_type", "n", "hits_ratio", "mean_recall", "recall_range"]].rename(columns={
                     "model": "Model",
                     "alert_type": "Typology",
-                    "n": "n (Test Positives)",
-                    "mean_recall": "Mean Recall",
-                    "min_recall": "Min Recall",
-                    "max_recall": "Max Recall"
+                    "n": "Unique Test Accounts",
+                    "hits_ratio": "Detections (5 Seeds)",
+                    "mean_recall": "Mean Recall (%)",
+                    "recall_range": "Seed Range"
                 }),
                 use_container_width=True,
                 hide_index=True

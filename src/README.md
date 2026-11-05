@@ -33,3 +33,4 @@ The modular Streamlit workbench is organized inside `src/app/`:
 - **`explainer_service.py`**: TreeSHAP and GNN feature attribution explainers.
 - **`components.py`**: Reusable UI cards, KPI header bars, and transaction audit ledgers.
 - **`views/`**: Page views for Case Investigation, Model Performance Analytics, and Model Architecture & Governance.
+

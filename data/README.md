@@ -35,3 +35,4 @@ To support instantaneous cold-starts and low-latency interactive investigation o
 | `elliptic_sample_edges.parquet` | ~4 KB | Directed payment edges connecting sample cryptocurrency transactions. |
 
 The caching layer is managed automatically by `src/app/data_manager.py` via `@st.cache_data`.
+

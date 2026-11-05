@@ -137,15 +137,15 @@ When evaluating models under temporal distribution shift (time-respecting split)
 
 ### Typology Detection Recall (`results/tables/typology_counts_v2.md`)
 
-Multi-seed evaluation on AMLSim test positives ($N=16$):
+Multi-seed evaluation on AMLSim hold-out test positives ($N=16$ unique accounts across 5 seeds = 80 total evaluation trials):
 
-| Model | Cycle ($n=4$) | Fan-in ($n=6$) | Fan-out ($n=6$) |
+| Model | Cycle ($n=4$ rings, 20 trials) | Fan-in ($n=6$ accounts, 30 trials) | Fan-out ($n=6$ accounts, 30 trials) |
 |---|---|---|---|
-| **GraphSAGE** | **0.8000** (min 0.75, max 1.00) | **0.7000** (min 0.67, max 0.83) | **0.6667** (min 0.50, max 0.83) |
-| **Random Forest** | 0.2500 (min 0.25, max 0.25) | 0.6667 (min 0.67, max 0.67) | 0.6000 (min 0.50, max 0.67) |
-| **XGBoost** | 0.4000 (min 0.25, max 0.50) | 0.5333 (min 0.33, max 0.67) | 0.4000 (min 0.33, max 0.67) |
+| **GraphSAGE** | **0.8000** (16/20 hits; min 0.75, max 1.00) | **0.7000** (21/30 hits; min 0.67, max 0.83) | **0.6667** (20/30 hits; min 0.50, max 0.83) |
+| **Random Forest** | 0.2500 (5/20 hits; min 0.25, max 0.25) | 0.6667 (20/30 hits; min 0.67, max 0.67) | 0.6000 (18/30 hits; min 0.50, max 0.67) |
+| **XGBoost** | 0.4000 (8/20 hits; min 0.25, max 0.50) | 0.5333 (16/30 hits; min 0.33, max 0.67) | 0.4000 (12/30 hits; min 0.33, max 0.67) |
 
-*GraphSAGE demonstrates higher recall on structural flow typologies (particularly cyclic routing at 80% recall vs. 25% for Random Forest), despite tree ensembles achieving higher global precision and AUC-PR.*
+*GraphSAGE demonstrates substantially higher sensitivity on structural flow typologies (particularly cyclic routing at 80% recall — 16 of 20 detections — vs. 25% for Random Forest — 5 of 20 detections), despite tree ensembles achieving higher global precision and AUC-PR on tabular features.*
 
 ---
 
