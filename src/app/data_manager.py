@@ -102,6 +102,7 @@ def load_elliptic_sample():
     return None, None
 
 
+@st.cache_data(show_spinner=False)
 def get_accounts_catalog(dataset="AMLSim", filter_mode="All"):
     """
     Returns a curated list of accounts with metadata for user selection.
@@ -115,7 +116,10 @@ def get_accounts_catalog(dataset="AMLSim", filter_mode="All"):
             return []
 
         # Merge alert types
-        merged = features[["acct_id", "type", "label_is_flagged_account", "out_total_amt", "total_tx_count"]].copy()
+        cols_needed = ["acct_id", "type", "label_is_flagged_account", "out_total_amt", "total_tx_count"]
+        if "in_total_amt" in features.columns:
+            cols_needed.append("in_total_amt")
+        merged = features[cols_needed].copy()
         merged = merged.merge(alerts[["acct_id", "alert_type"]].drop_duplicates("acct_id"), on="acct_id", how="left")
         merged["alert_type"] = merged["alert_type"].fillna("normal")
 
@@ -135,7 +139,8 @@ def get_accounts_catalog(dataset="AMLSim", filter_mode="All"):
             aid = int(row["acct_id"])
             typ = row["alert_type"].upper()
             is_sar = "⚠️ SAR" if row["label_is_flagged_account"] == 1 else "✅ NORMAL"
-            label = f"ID #{aid:<4} | {is_sar:<10} | [{typ:<7}] | Total: ${row['out_total_amt']:,.0f}"
+            gross_flow = float(row.get("out_total_amt", 0.0) + row.get("in_total_amt", 0.0))
+            label = f"ID #{aid:<4} | {is_sar:<10} | [{typ:<7}] | Total Gross Flow: ${gross_flow:,.0f}"
             items.append({"id": aid, "label": label, "is_sar": int(row["label_is_flagged_account"]), "type": row["alert_type"]})
 
         return items

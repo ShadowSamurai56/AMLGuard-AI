@@ -4,6 +4,7 @@ Professional FinTech / RegTech Dark & Light Theme
 """
 
 import streamlit as st
+import textwrap
 
 
 def apply_theme():
@@ -214,7 +215,7 @@ def apply_theme():
 def render_header(current_dataset="AMLSim"):
     """Renders the top branding navigation bar."""
     ds_badge = "SYNTHETIC BANKING (AMLSim)" if current_dataset == "AMLSim" else "BITCOIN FORENSICS (Elliptic)"
-    html = f"""
+    html = textwrap.dedent(f"""
     <div class="brand-header">
         <div>
             <div class="brand-title">
@@ -226,9 +227,9 @@ def render_header(current_dataset="AMLSim"):
         </div>
         <div style="display: flex; gap: 0.6rem; align-items: center;">
             <span class="brand-pill">{ds_badge}</span>
-            <span class="brand-pill" style="border-color: #10b981; color: #34d399; background: rgba(16, 185, 129, 0.1);">SYSTEM ONLINE</span>
+            <span class="brand-pill" style="border-color: #10b981; color: #34d399; background: rgba(16, 185, 129, 0.1);">LIVE DEMO</span>
         </div>
     </div>
-    """
+    """).strip()
     st.markdown(html, unsafe_allow_html=True)
 

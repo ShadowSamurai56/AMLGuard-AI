@@ -32,3 +32,9 @@ models/elliptic_graph_timesplit.pt
 # Backups, scratch files & logs
 models/*.BACKUP*
 *.log
+
+# Generated PDF reports & HTML exports (kept locally for assignment submission)
+*.pdf
+docs/*.pdf
+*.html
+docs/*.html

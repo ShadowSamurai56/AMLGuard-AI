@@ -10,6 +10,10 @@ DATA_DIR = os.path.join(ROOT_DIR, "data")
 CACHE_DIR = os.path.join(DATA_DIR, "cache")
 RESULTS_DIR = os.path.join(ROOT_DIR, "results")
 
+# Application Metadata
+APP_VERSION = "v2.1"
+APP_SUBTITLE = "Research Prototype"
+
 # Database configuration (with graceful fallback to cached parquet)
 DB_CONFIG = {
     "user": "aml_user",

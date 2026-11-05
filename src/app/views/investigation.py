@@ -6,6 +6,7 @@ ego networks, and local explainability.
 
 import streamlit as st
 import pandas as pd
+import textwrap
 
 from src.app.data_manager import (
     load_amlsim_features,
@@ -73,10 +74,20 @@ def render_investigation_view():
     # Account selector dropdown
     with col_ctrl3:
         acct_labels = [a["label"] for a in accounts]
+        
+        # Default to a flagged account in a circular routing ring (Account #96 where GraphSAGE catches circular flow)
+        default_idx = 0
+        target_default_id = 96 if ds_code == "AMLSim" else None
+        if target_default_id is not None:
+            for idx, a in enumerate(accounts):
+                if a["id"] == target_default_id:
+                    default_idx = idx
+                    break
+
         selected_label = st.selectbox(
             "Select Account to Investigate",
             acct_labels,
-            index=0
+            index=default_idx
         )
         selected_item = next(a for a in accounts if a["label"] == selected_label)
         selected_id = selected_item["id"]
@@ -167,16 +178,14 @@ def render_investigation_view():
             st.plotly_chart(fig_graph, use_container_width=True)
 
             # Clean legend
-            st.markdown(
-                """
-                <div style="font-size: 0.78rem; color: #94a3b8; display: flex; gap: 1.2rem; justify-content: center; margin-top: -8px;">
-                    <span>🔷 <b>Investigated Account</b></span>
-                    <span><span style="color: #f43f5e;">●</span> <b>SAR Counterparty</b></span>
-                    <span><span style="color: #64748b;">●</span> <b>Normal Peer</b></span>
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
+            legend_html = textwrap.dedent("""
+            <div style="font-size: 0.78rem; color: #94a3b8; display: flex; gap: 1.2rem; justify-content: center; margin-top: -8px;">
+                <span>🔷 <b>Investigated Account</b></span>
+                <span><span style="color: #f43f5e;">●</span> <b>SAR Counterparty</b></span>
+                <span><span style="color: #64748b;">●</span> <b>Normal Peer</b></span>
+            </div>
+            """).strip()
+            st.markdown(legend_html, unsafe_allow_html=True)
 
         with col_shap:
             st.markdown("### 🔍 Model Explainability & Attribution")

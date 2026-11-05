@@ -210,10 +210,10 @@ def predict_amlsim_account(acct_id, features_df):
     # Automated model reconciliation note
     divergence_note = None
     if (max_prob - min_prob) >= 0.35:
-        if scores.get("Logistic Regression", 0) > 0.6 and scores.get("XGBoost", 0) < 0.2:
+        if scores.get("GraphSAGE", 0) > 0.65 and scores.get("Random Forest", 0) < 0.4:
+            divergence_note = "Relational Flag: GraphSAGE identified coordinated multi-hop network patterns (circular routing) invisible to isolated tabular scoring."
+        elif scores.get("Logistic Regression", 0) > 0.6 and scores.get("XGBoost", 0) < 0.2:
             divergence_note = "Model Divergence Detected: Linear baseline elevated by gross volume; primary gradient-boosted ensemble clears entity with balanced turnover."
-        elif scores.get("GraphSAGE", 0) > 0.7 and scores.get("Random Forest", 0) < 0.4:
-            divergence_note = "Relational Flag: GraphSAGE identified coordinated multi-hop network patterns invisible to isolated tabular scoring."
 
     return {
         "acct_id": acct_id,
