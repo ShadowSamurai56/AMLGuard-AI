@@ -210,10 +210,34 @@ def predict_amlsim_account(acct_id, features_df):
     # Automated model reconciliation note
     divergence_note = None
     if (max_prob - min_prob) >= 0.35:
-        if scores.get("GraphSAGE", 0) > 0.65 and scores.get("Random Forest", 0) < 0.4:
-            divergence_note = "Relational Flag: GraphSAGE identified coordinated multi-hop network patterns (circular routing) invisible to isolated tabular scoring."
-        elif scores.get("Logistic Regression", 0) > 0.6 and scores.get("XGBoost", 0) < 0.2:
-            divergence_note = "Model Divergence Detected: Linear baseline elevated by gross volume; primary gradient-boosted ensemble clears entity with balanced turnover."
+        gs_score = scores.get("GraphSAGE", 0.0)
+        gat_score = scores.get("GAT (Tuned)", 0.0)
+        rf_score = scores.get("Random Forest", 0.0)
+        xgb_score = scores.get("XGBoost", 0.0)
+        lr_score = scores.get("Logistic Regression", 0.0)
+
+        if gs_score > 0.65 and rf_score < 0.4:
+            if lr_score > 0.6:
+                divergence_note = (
+                    f"Model Divergence: Graph models (GraphSAGE: {gs_score*100:.1f}%, GAT: {gat_score*100:.1f}%) "
+                    f"flagged coordinated circular routing missed by tree ensembles (RF: {rf_score*100:.1f}%, XGB: {xgb_score*100:.1f}%). "
+                    f"Note: Linear baseline elevation (LogReg: {lr_score*100:.1f}%) is driven primarily by gross volume rather than network topology."
+                )
+            else:
+                divergence_note = (
+                    f"Relational Flag: GraphSAGE ({gs_score*100:.1f}%) detected coordinated multi-hop network patterns "
+                    f"invisible to tree ensembles (RF: {rf_score*100:.1f}%, XGB: {xgb_score*100:.1f}%)."
+                )
+        elif lr_score > 0.6 and xgb_score < 0.2 and gs_score < 0.4:
+            divergence_note = (
+                f"Volume vs. Structure Divergence: Linear baseline (LogReg: {lr_score*100:.1f}%) is elevated by gross transfer volume, "
+                f"whereas gradient-boosted trees (XGB: {xgb_score*100:.1f}%) and GNNs clear the entity due to normal turnover ratios."
+            )
+        elif rf_score > 0.7 and gs_score < 0.4:
+            divergence_note = (
+                f"Behavioral Anomaly: Tree ensemble (RF: {rf_score*100:.1f}%) flagged local feature surges (velocity / counterparty burst) "
+                f"that do not exhibit multi-hop graph coordination."
+            )
 
     return {
         "acct_id": acct_id,
@@ -221,6 +245,7 @@ def predict_amlsim_account(acct_id, features_df):
         "scores": scores,
         "max_prob": max_prob,
         "consensus_prob": consensus_prob,
+        "consensus_rationale": "Weighted by validation AUC-PR (Tree Ensembles: 70%, Graph Models: 25%, Linear: 5%)",
         "risk_level": band,
         "disposition": disposition,
         "divergence_note": divergence_note,

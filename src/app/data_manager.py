@@ -103,6 +103,30 @@ def load_elliptic_sample():
 
 
 @st.cache_data(show_spinner=False)
+def load_aml_split_mask():
+    """Returns mapping of node_idx -> split name ('TEST', 'VAL', 'TRAIN')."""
+    graph_path = os.path.join(MODELS_DIR, "aml_graph.pt")
+    if not os.path.exists(graph_path):
+        return {}
+    try:
+        import torch
+        graph = torch.load(graph_path, weights_only=False)
+        test_mask = graph.test_mask.numpy()
+        val_mask = graph.val_mask.numpy()
+        split_map = {}
+        for i in range(len(test_mask)):
+            if test_mask[i]:
+                split_map[i] = "TEST"
+            elif val_mask[i]:
+                split_map[i] = "VAL"
+            else:
+                split_map[i] = "TRAIN"
+        return split_map
+    except Exception:
+        return {}
+
+
+@st.cache_data(show_spinner=False)
 def get_accounts_catalog(dataset="AMLSim", filter_mode="All"):
     """
     Returns a curated list of accounts with metadata for user selection.
@@ -111,6 +135,7 @@ def get_accounts_catalog(dataset="AMLSim", filter_mode="All"):
     if dataset == "AMLSim":
         features = load_amlsim_features()
         alerts = load_amlsim_alerts()
+        split_map = load_aml_split_mask()
 
         if features.empty:
             return []
@@ -140,8 +165,15 @@ def get_accounts_catalog(dataset="AMLSim", filter_mode="All"):
             typ = row["alert_type"].upper()
             is_sar = "⚠️ SAR" if row["label_is_flagged_account"] == 1 else "✅ NORMAL"
             gross_flow = float(row.get("out_total_amt", 0.0) + row.get("in_total_amt", 0.0))
-            label = f"ID #{aid:<4} | {is_sar:<10} | [{typ:<7}] | Total Gross Flow: ${gross_flow:,.0f}"
-            items.append({"id": aid, "label": label, "is_sar": int(row["label_is_flagged_account"]), "type": row["alert_type"]})
+            split_code = split_map.get(aid, "TEST")
+            label = f"ID #{aid:<4} | {is_sar:<10} | [{typ:<7}] | [{split_code:<5}] | Total Gross Flow: ${gross_flow:,.0f}"
+            items.append({
+                "id": aid,
+                "label": label,
+                "is_sar": int(row["label_is_flagged_account"]),
+                "type": row["alert_type"],
+                "split": split_code
+            })
 
         return items
 
@@ -159,8 +191,16 @@ def get_accounts_catalog(dataset="AMLSim", filter_mode="All"):
         for _, row in feat.iterrows():
             tx_id = int(row["tx_id"])
             status = "⚠️ ILLICIT" if row["class"] == "1" else ("✅ LICIT" if row["class"] == "2" else "UNKNOWN")
-            label = f"Tx #{tx_id} | {status} | Step: {int(row.get('feat_0', 0))}"
-            items.append({"id": tx_id, "label": label, "is_sar": 1 if row["class"] == "1" else 0, "type": "bitcoin"})
+            step = int(row.get('feat_0', 0))
+            split_code = "TEST" if step >= 35 else "TRAIN"
+            label = f"Tx #{tx_id} | {status} | [{split_code}] | Step: {step}"
+            items.append({
+                "id": tx_id,
+                "label": label,
+                "is_sar": 1 if row["class"] == "1" else 0,
+                "type": "bitcoin",
+                "split": split_code
+            })
 
         return items
 

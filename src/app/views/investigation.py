@@ -127,11 +127,12 @@ def render_investigation_view():
             disposition=prediction["disposition"],
             total_volume=total_vol,
             tx_count=tx_cnt,
-            divergence_note=prediction.get("divergence_note")
+            divergence_note=prediction.get("divergence_note"),
+            split=selected_item.get("split", "TEST")
         )
 
         # 2. Multi-Model Prediction Cards
-        st.markdown("### 🤖 Multi-Model Consensus & Inference Matrix")
+        st.markdown("### Multi-Model Consensus & Inference Matrix")
         render_model_comparison_cards(prediction["scores"], ground_truth)
 
         st.markdown("<br>", unsafe_allow_html=True)
@@ -140,7 +141,7 @@ def render_investigation_view():
         col_graph, col_shap = st.columns([1.1, 0.9])
 
         with col_graph:
-            st.markdown("### 🕸️ Transaction Flow & Ego-Network")
+            st.markdown("### Transaction Flow & Counterparty Network")
 
             col_g1, col_g2 = st.columns([1, 1])
             with col_g1:
@@ -188,7 +189,7 @@ def render_investigation_view():
             st.markdown(legend_html, unsafe_allow_html=True)
 
         with col_shap:
-            st.markdown("### 🔍 Model Explainability & Attribution")
+            st.markdown("### Model Explainability & Feature Attribution")
 
             tab_shap, tab_features = st.tabs(["TreeSHAP Feature Drivers", "Raw Behavioral Metrics"])
 
@@ -209,7 +210,7 @@ def render_investigation_view():
                 st.dataframe(df_ft, use_container_width=True, height=330, hide_index=True)
 
         # 4. Atomic Transaction Ledger
-        st.markdown("### 📜 Account Transaction History (Audit Ledger)")
+        st.markdown("### Account Transaction History (Audit Ledger)")
         render_transaction_ledger(transactions_df, selected_id, limit=8)
 
     # ---------------------------------------------------------
@@ -237,11 +238,12 @@ def render_investigation_view():
             risk_level=prediction["risk_level"],
             disposition=prediction["disposition"],
             total_volume=1.0,
-            tx_count=1
+            tx_count=1,
+            split=selected_item.get("split", "TEST")
         )
 
         # 2. Model Cards
-        st.markdown("### 🤖 Multi-Model Consensus on Entity Transaction")
+        st.markdown("### Multi-Model Consensus on Entity Transaction")
         render_model_comparison_cards(prediction["scores"], ground_truth)
 
         st.markdown("<br>", unsafe_allow_html=True)
@@ -249,13 +251,13 @@ def render_investigation_view():
         # 3. Ego Graph
         col_graph_el, col_info_el = st.columns([1.2, 0.8])
         with col_graph_el:
-            st.markdown("### 🕸️ Bitcoin 1-Hop Transaction Tree")
+            st.markdown("### Bitcoin 1-Hop Transaction Tree")
             G_el = build_elliptic_ego_network(selected_id, sample_edges, sample_feat)
             fig_el = render_interactive_graph(G_el, target_id=selected_id, dataset="Elliptic")
             st.plotly_chart(fig_el, use_container_width=True)
 
         with col_info_el:
-            st.markdown("### ℹ️ Elliptic Forensics Details")
+            st.markdown("### Elliptic Forensics Details")
             st.info(
                 f"""
                 **Transaction ID:** `{selected_id}`  

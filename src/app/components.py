@@ -9,7 +9,7 @@ import textwrap
 from src.app.config import RISK_LEVELS, TYPOLOGY_INFO
 
 
-def render_kpi_bar(acct_id, ground_truth, typology, consensus_prob, risk_level, disposition, total_volume, tx_count, divergence_note=None):
+def render_kpi_bar(acct_id, ground_truth, typology, consensus_prob, risk_level, disposition, total_volume, tx_count, divergence_note=None, split="TEST"):
     """Renders the executive summary card with refined enterprise badges and consensus metrics."""
     cfg = RISK_LEVELS.get(risk_level, RISK_LEVELS["LOW"])
     typ_cfg = TYPOLOGY_INFO.get(typology, TYPOLOGY_INFO["normal"])
@@ -20,6 +20,14 @@ def render_kpi_bar(acct_id, ground_truth, typology, consensus_prob, risk_level, 
         if ground_truth == 1
         else '<span style="background: rgba(16, 185, 129, 0.1); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.25); font-size: 0.72rem; font-weight: 600; padding: 0.2rem 0.6rem; border-radius: 4px; font-family: \'JetBrains Mono\';">VERIFIED NORMAL</span>'
     )
+
+    # Split indicator
+    if split == "TEST":
+        split_badge = '<span style="background: rgba(59, 130, 246, 0.12); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); font-size: 0.72rem; font-weight: 600; padding: 0.2rem 0.6rem; border-radius: 4px; font-family: \'JetBrains Mono\';">HOLD-OUT TEST SET</span>'
+    elif split == "VAL":
+        split_badge = '<span style="background: rgba(148, 163, 184, 0.12); color: #94a3b8; border: 1px solid rgba(148, 163, 184, 0.25); font-size: 0.72rem; font-weight: 600; padding: 0.2rem 0.6rem; border-radius: 4px; font-family: \'JetBrains Mono\';">VALIDATION SET</span>'
+    else:
+        split_badge = '<span style="background: rgba(148, 163, 184, 0.12); color: #94a3b8; border: 1px solid rgba(148, 163, 184, 0.25); font-size: 0.72rem; font-weight: 600; padding: 0.2rem 0.6rem; border-radius: 4px; font-family: \'JetBrains Mono\';">TRAINING SET</span>'
 
     # Disposition styling
     if "ESCALATE" in disposition:
@@ -43,14 +51,16 @@ def render_kpi_bar(acct_id, ground_truth, typology, consensus_prob, risk_level, 
 <div style="font-size: 1.65rem; font-weight: 700; color: #f8fafc; font-family: 'JetBrains Mono', monospace; margin: 0.15rem 0;">ACCOUNT #{acct_id}</div>
 <div style="display: flex; gap: 0.45rem; margin-top: 0.35rem; align-items: center; flex-wrap: wrap;">
 {sar_badge}
+{split_badge}
 {disp_badge}
 {typology_badge}
 </div>
 </div>
 <div style="display: flex; gap: 2.2rem; text-align: right; flex-wrap: wrap;">
 <div>
-<div style="font-size: 0.7rem; color: #64748b; text-transform: uppercase; font-weight: 600; letter-spacing: 0.04em;">CONSENSUS RISK SCORE</div>
+<div style="font-size: 0.7rem; color: #64748b; text-transform: uppercase; font-weight: 600; letter-spacing: 0.04em;" title="Validation AUC-PR weighted: RF (35%), XGB (35%), GraphSAGE (20%), GAT (5%), LogReg (5%)">CONSENSUS RISK SCORE <span style="font-size: 0.72rem; color: #94a3b8; cursor: help;">ⓘ</span></div>
 <div style="font-size: 1.55rem; font-weight: 700; color: #f8fafc; font-family: 'JetBrains Mono', monospace;">{consensus_prob * 100:.1f} <span style="font-size: 0.85rem; color: #64748b; font-weight: 500;">/ 100</span></div>
+<div style="font-size: 0.66rem; color: #64748b; margin-top: 1px;">AUC-PR Weighted (Trees 70%, Graph 25%, Linear 5%)</div>
 </div>
 <div>
 <div style="font-size: 0.7rem; color: #64748b; text-transform: uppercase; font-weight: 600; letter-spacing: 0.04em;">TOTAL GROSS FLOW</div>
