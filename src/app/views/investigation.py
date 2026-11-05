@@ -102,16 +102,16 @@ def render_investigation_view():
         transactions_df = load_amlsim_transactions()
         alerts_df = load_amlsim_alerts()
 
-        # Run inference
-        prediction = predict_amlsim_account(selected_id, features_df)
-        if prediction is None:
-            st.error(f"Account #{selected_id} not found in feature matrix.")
-            return
-
-        # Look up alert metadata
+        # Look up alert metadata first
         alert_row = alerts_df[alerts_df["acct_id"] == selected_id]
         typology = alert_row["alert_type"].iloc[0] if not alert_row.empty else "normal"
         ground_truth = selected_item["is_sar"]
+
+        # Run inference with typology-aware divergence modeling
+        prediction = predict_amlsim_account(selected_id, features_df, typology=typology)
+        if prediction is None:
+            st.error(f"Account #{selected_id} not found in feature matrix.")
+            return
 
         feat_dict = prediction["features"]
         total_vol = feat_dict.get("out_total_amt", 0.0) + feat_dict.get("in_total_amt", 0.0)

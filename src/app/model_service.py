@@ -110,15 +110,27 @@ def load_elliptic_models():
 # -------------------------------------------------------------
 # Inference Functions
 # -------------------------------------------------------------
-def predict_amlsim_account(acct_id, features_df):
+def predict_amlsim_account(acct_id, features_df, typology=None):
     """
-    Computes predictions for a specific account ID across all models.
-    Returns: dict of model name -> probability, consensus risk, risk level.
+    Computes predictions for a specific account ID across all 5 models.
+    Applies the Dual-Tier Structural Policy Override and generates dynamic,
+    typology-aware divergence explanations.
+    Returns: dict of model name -> probability, consensus risk, risk level, disposition, divergence_note.
     """
     models = load_amlsim_models()
     row = features_df[features_df["acct_id"] == acct_id]
     if row.empty:
         return None
+
+    # Resolve typology if not provided
+    if typology is None:
+        try:
+            from src.app.data_manager import load_amlsim_alerts
+            alerts_df = load_amlsim_alerts()
+            alert_match = alerts_df[alerts_df["acct_id"] == acct_id]
+            typology = alert_match["alert_type"].iloc[0] if not alert_match.empty else "normal"
+        except Exception:
+            typology = "normal"
 
     # Node index in graph
     node_idx = int(row.index[0])
@@ -225,33 +237,48 @@ def predict_amlsim_account(acct_id, features_df):
 
     # Automated model reconciliation note
     divergence_note = None
+
+    if typology == "cycle":
+        pattern_phrase = "coordinated circular routing rings (closed wash-trading cycles)"
+    elif typology == "fan_in":
+        pattern_phrase = "fan-in structuring (multiple inbound deposits consolidating into a single entity)"
+    elif typology == "fan_out":
+        pattern_phrase = "fan-out dispersion (rapid scattering of funds across multiple counterparties)"
+    else:
+        pattern_phrase = "dense multi-hop relational connectivity and counterparty clustering"
+
     if structural_override:
-        if lr_score > 0.6:
+        if lr_score > 0.60:
             divergence_note = (
                 f"Dual-Tier Policy Override: Graph models (GraphSAGE: {gs_score*100:.1f}%, GAT: {gat_score*100:.1f}%) "
-                f"flagged coordinated circular routing missed by tree ensembles (RF: {rf_score*100:.1f}%, XGB: {xgb_score*100:.1f}%), "
+                f"flagged {pattern_phrase} missed by tree ensembles (RF: {rf_score*100:.1f}%, XGB: {xgb_score*100:.1f}%), "
                 f"triggering structural SAR escalation. Note: Linear baseline elevation (LogReg: {lr_score*100:.1f}%) is driven primarily by gross volume rather than network structure."
             )
         else:
             divergence_note = (
-                f"Dual-Tier Policy Override: GraphSAGE ({gs_score*100:.1f}%) detected coordinated multi-hop network patterns "
-                f"missed by tree ensembles (RF: {rf_score*100:.1f}%, XGB: {xgb_score*100:.1f}%), triggering structural SAR escalation."
+                f"Dual-Tier Policy Override: Graph models (GraphSAGE: {gs_score*100:.1f}%, GAT: {gat_score*100:.1f}%) "
+                f"flagged {pattern_phrase} missed by tree ensembles (RF: {rf_score*100:.1f}%, XGB: {xgb_score*100:.1f}%), "
+                f"triggering structural SAR escalation."
             )
-    elif (max_prob - min_prob) >= 0.35:
-        if lr_score > 0.6 and xgb_score < 0.2 and gs_score < 0.4:
-            divergence_note = (
-                f"Volume vs. Structure Divergence: Linear baseline (LogReg: {lr_score*100:.1f}%) is elevated by gross transfer volume, "
-                f"whereas gradient-boosted trees (XGB: {xgb_score*100:.1f}%) and GNNs clear the entity due to normal turnover ratios."
-            )
-        elif rf_score > 0.7 and gs_score < 0.4:
-            divergence_note = (
-                f"Behavioral Anomaly: Tree ensemble (RF: {rf_score*100:.1f}%) flagged local feature surges (velocity / counterparty burst) "
-                f"that do not exhibit multi-hop graph coordination."
-            )
-    elif min_prob >= 0.60:
+    elif (rf_score >= 0.60 and xgb_score >= 0.60 and gs_score >= 0.60) or min_prob >= 0.60:
         divergence_note = (
             f"Consensus Agreement: Both tabular tree ensembles (RF: {rf_score*100:.1f}%, XGB: {xgb_score*100:.1f}%) "
-            f"and graph models (GraphSAGE: {gs_score*100:.1f}%) strongly align on high illicit probability."
+            f"and graph models (GraphSAGE: {gs_score*100:.1f}%) strongly align on high illicit probability for this {typology.replace('_', '-')} entity."
+        )
+    elif lr_score > 0.60 and xgb_score < 0.25 and gs_score < 0.50:
+        divergence_note = (
+            f"Volume vs. Structure Divergence: Linear baseline (LogReg: {lr_score*100:.1f}%) is elevated by gross transfer volume, "
+            f"whereas gradient-boosted trees (XGB: {xgb_score*100:.1f}%) and GNNs clear the entity due to normal turnover ratios and benign counterparty topology."
+        )
+    elif rf_score > 0.65 and gs_score < 0.40 and gat_score < 0.40:
+        divergence_note = (
+            f"Behavioral Anomaly: Tree ensemble (RF: {rf_score*100:.1f}%) flagged localized transactional feature surges "
+            f"(velocity / counterparty burst) that lack multi-hop graph coordination."
+        )
+    elif (max_prob - min_prob) >= 0.40:
+        divergence_note = (
+            f"Model Disparity: High score spread ({(max_prob - min_prob)*100:.1f}%). "
+            f"Tree models score RF: {rf_score*100:.1f}%, XGB: {xgb_score*100:.1f}% vs. graph models GraphSAGE: {gs_score*100:.1f}%, GAT: {gat_score*100:.1f}%."
         )
 
     return {
