@@ -178,18 +178,25 @@ AMLGuard-AI/
 ├── app.py                         # Streamlit interactive application entrypoint
 ├── requirements.txt               # Pinned core dependencies
 ├── AMLSim/                        # Java multi-agent transaction simulation engine
+│   └── README.md                  # Simulation engine documentation
 ├── data/                          # Raw simulation CSVs & offline parquet cache
+│   └── README.md                  # Dataset & parquet cache schema
+├── docs/                          # Comprehensive reports & academic documentation
+│   └── README.md                  # Regulatory report & resume documentation
 ├── elliptic_data/                 # Raw Elliptic benchmark CSVs (classes, edgelist, features)
+│   └── README.md                  # Elliptic benchmark dataset guide
 ├── models/                        # Serialized graph objects, model checkpoints, raw CSVs
 │   └── README.md                  # Detailed models directory index
 ├── notebooks/                     # Exploratory Jupyter notebooks
-│   └── exploratory_experiments.ipynb
+│   └── README.md                  # Exploratory experiments notebook index
 ├── results/                       # Final consolidated tables and figures
 │   ├── README.md                  # Results directory index
 │   ├── figures/                   # 200 DPI publication charts
 │   └── tables/                    # CSV and Markdown result tables
 └── src/                           # Execution scripts & UI modules
+    ├── README.md                  # Execution pipeline & script index
     ├── app/                       # Modular Streamlit application architecture
+    │   ├── README.md              # Application & component architecture guide
     │   ├── theme.py               # FinTech design system CSS, cards, and badges
     │   ├── config.py              # Configuration & constants
     │   ├── data_manager.py        # Cached data loader (MySQL + Parquet fallback)
