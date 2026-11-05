@@ -1,4 +1,4 @@
-# Environments
+# Python Virtual Environments
 venv
 venv/
 venv.nosync
@@ -6,27 +6,29 @@ venv.nosync/
 ENV/
 env/
 
-# Byte-compiled / optimized / DLL files
+# Python Byte-compiled / cache files
 __pycache__/
 *.py[cod]
 *$py.class
+*.ipynb_checkpoints/
+.pytest_cache/
 
-# Mac system files
+# OS metadata
 .DS_Store
 .AppleDouble
 .LSOverride
+Thumbs.db
 
-# Editor settings
+# IDE & Editor settings
 .vscode/
 .idea/
 
-# Large dataset files (>100MB exceeds GitHub push limit)
-# Instructions to download these are provided in README.md
+# Large dataset & graph files (>100MB exceeds GitHub push limit)
+# Reproduction instructions to build these are documented in README.md
 elliptic_data/
 models/elliptic_graph.pt
 models/elliptic_graph_timesplit.pt
 
-# Backups and temporary files
+# Backups, scratch files & logs
 models/*.BACKUP*
-Untitled1.ipynb
 *.log

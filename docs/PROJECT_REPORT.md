@@ -4,7 +4,7 @@
 **Project Title:** AMLGuard AI  
 **Course / Degree:** B.Tech / M.Sc Project  
 **Academic Year:** 2025–2026  
-**GitHub Repository:** [https://github.com/raghav-aggarwal/AMLGuard-AI](https://github.com/raghav-aggarwal/AMLGuard-AI)  
+**GitHub Repository:** [https://github.com/ShadowSamurai56/AMLGuard-AI](https://github.com/ShadowSamurai56/AMLGuard-AI)  
 
 ---
 
@@ -328,8 +328,8 @@ GraphSAGE aggregates features from 1-hop and 2-hop neighbors. Through message pa
 ## 6. Code and Dataset Links
 
 ### 6.1 GitHub Repository
-* **Project Repository:** [https://github.com/raghav-aggarwal/AMLGuard-AI](https://github.com/raghav-aggarwal/AMLGuard-AI)
-* **Local Workspace Root:** `/Users/raghavaggarwal/Desktop/AMLGuard-AI`
+* **Project Repository:** [https://github.com/ShadowSamurai56/AMLGuard-AI](https://github.com/ShadowSamurai56/AMLGuard-AI)
+* **Application Entrypoint:** `app.py` (Streamlit Transaction Monitoring Workbench)
 
 ### 6.2 Dataset Sources & Access Links
 1. **IBM AMLSim Synthetic Banking Dataset:**

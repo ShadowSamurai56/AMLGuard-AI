@@ -1,0 +1,3 @@
+[submodule "AMLSim"]
+	path = AMLSim
+	url = https://github.com/IBM/AMLSim.git
