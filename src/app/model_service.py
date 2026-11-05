@@ -362,6 +362,7 @@ def predict_amlsim_account(acct_id, features_df, typology=None):
     logreg_expl = explain_logreg_account(acct_id, features_df)
     lr_clause = logreg_expl["clause"] if logreg_expl else f"Linear baseline (LogReg: {lr_score*100:.1f}%) is elevated."
     top_fam_name = logreg_expl["top_family"]["family"].lower() if logreg_expl else "transaction features"
+    top_fam_share = logreg_expl["top_family"]["share_pct"] if logreg_expl else 0.0
 
     # Pattern description
     if typology == "cycle":
@@ -376,8 +377,8 @@ def predict_amlsim_account(acct_id, features_df, typology=None):
     if structural_override:
         if is_normal:
             divergence_note = (
-                f"Likely false positive: graph models (GraphSAGE {gs_score*100:.1f}%, GAT {gat_score*100:.1f}%) "
-                f"and the linear baseline are elevated by {top_fam_name}; tree ensembles clear this entity."
+                f"Likely false positive: linear baseline elevated mainly by {top_fam_name} ({top_fam_share:.1f}% of its net contribution); "
+                f"graph models are also elevated, likely by dense connectivity; tree ensembles clear this entity."
             )
         else:
             if lr_score > 0.60:
