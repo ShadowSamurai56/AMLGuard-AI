@@ -1,0 +1,17 @@
+acct_id,y_true,y_pred,is_test,alert_type
+53,1,1,True,fan_in
+55,1,0,True,cycle
+63,1,1,True,fan_out
+96,1,1,True,cycle
+108,1,0,True,fan_in
+129,1,0,True,cycle
+175,1,1,True,cycle
+176,1,1,True,fan_in
+264,1,1,True,fan_in
+394,1,0,True,fan_in
+426,1,0,True,fan_out
+462,1,0,True,fan_out
+575,1,1,True,fan_out
+731,1,1,True,fan_in
+776,1,1,True,fan_out
+1180,1,1,True,fan_out

@@ -1,0 +1,32 @@
+# Environments
+venv
+venv/
+venv.nosync
+venv.nosync/
+ENV/
+env/
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Mac system files
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Editor settings
+.vscode/
+.idea/
+
+# Large dataset files (>100MB exceeds GitHub push limit)
+# Instructions to download these are provided in README.md
+elliptic_data/
+models/elliptic_graph.pt
+models/elliptic_graph_timesplit.pt
+
+# Backups and temporary files
+models/*.BACKUP*
+Untitled1.ipynb
+*.log

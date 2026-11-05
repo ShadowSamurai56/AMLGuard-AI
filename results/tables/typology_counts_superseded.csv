@@ -1,0 +1,7 @@
+alert_type,model,n,k,recall
+cycle,GraphSAGE,4,2,2/4
+cycle,Random Forest,4,2,2/4
+fan_in,GraphSAGE,6,4,4/6
+fan_in,Random Forest,6,4,4/6
+fan_out,GraphSAGE,6,4,4/6
+fan_out,Random Forest,6,5,5/6
