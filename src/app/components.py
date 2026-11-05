@@ -74,7 +74,7 @@ def render_kpi_bar(acct_id, ground_truth, typology, consensus_prob, risk_level, 
 </div>
 {note_html}
 <div style="margin-top: 0.65rem; padding-top: 0.65rem; border-top: 1px solid #1e293b; font-size: 0.8rem; color: #94a3b8;">
-<b>Typology Classification:</b> {typ_cfg['description']}
+<b>AMLSim ground-truth label:</b> {typ_cfg['description']}
 </div>
 </div>""").strip()
     st.markdown(html, unsafe_allow_html=True)

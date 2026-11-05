@@ -108,14 +108,31 @@ def load_elliptic_models():
 
 
 # -------------------------------------------------------------
-# Inference Functions
+# Feature Families for Logistic Regression Linear Decomposition
 # -------------------------------------------------------------
+FEATURE_FAMILIES = {
+    "Outbound volume & ticket size": [
+        "out_total_amt", "out_avg_amt", "out_max_amt", "out_std_amt", "out_tx_count"
+    ],
+    "Inbound volume & ticket size": [
+        "in_total_amt", "in_avg_amt", "in_max_amt", "in_std_amt", "in_tx_count"
+    ],
+    "Counterparty breadth": [
+        "in_unique_counterparties", "out_unique_counterparties", "total_unique_counterparties"
+    ],
+    "Velocity & flow balance": [
+        "avg_hours_between_out_tx", "total_tx_count", "net_flow", "type"
+    ]
+}
+
+
 def explain_logreg_account(acct_id, features_df):
     """
-    Computes exact linear feature contributions for Logistic Regression on an account:
-    contribution_i = coefficient_i * scaled_feature_i using the exact fitted
-    StandardScaler and LogisticRegression model.
-    Returns: dict containing 'top_3' features, 'top_feature', 'clause', and 'total_abs'.
+    Computes exact linear feature contributions and groups collinear features into functional families:
+    contribution_i = beta_i * x_scaled_i.
+    Net family contribution = sum of contribution_i within each family.
+    Family share = |net_family| / sum(|net_family|).
+    Returns family-level breakdowns and per-feature secondary views.
     """
     models = load_amlsim_models()
     if "lr" not in models or "scaler" not in models:
@@ -141,41 +158,68 @@ def explain_logreg_account(acct_id, features_df):
     X_scaled = scaler.transform(X_df)[0]
     coefs = lr.coef_[0]
     contribs = coefs * X_scaled
-    total_abs = float(np.sum(np.abs(contribs)))
+    feature_contrib_map = dict(zip(feature_names, contribs))
 
-    VOLUME_KEYS = {"out_total_amt", "in_total_amt", "net_flow"}
     from src.app.config import FEATURE_LABELS_AMLSIM
 
-    items = []
+    # Map reverse: feature -> family name
+    feat_to_fam = {}
+    for fam_name, f_list in FEATURE_FAMILIES.items():
+        for f in f_list:
+            feat_to_fam[f] = fam_name
+
+    # Compute Net Signed Contribution per Family
+    family_nets = {}
+    family_feature_map = {}
+    for fam_name, f_list in FEATURE_FAMILIES.items():
+        fam_net = sum(feature_contrib_map.get(f, 0.0) for f in f_list)
+        family_nets[fam_name] = fam_net
+        family_feature_map[fam_name] = f_list
+
+    sum_abs_fam = sum(abs(v) for v in family_nets.values())
+
+    family_items = []
+    for fam_name, net_val in family_nets.items():
+        share = (abs(net_val) / sum_abs_fam * 100.0) if sum_abs_fam > 0 else 0.0
+        family_items.append({
+            "family": fam_name,
+            "net_contribution": float(net_val),
+            "abs_contribution": float(abs(net_val)),
+            "share_pct": float(share),
+            "direction": "Pushes toward SAR (+)" if net_val > 0 else "Pushes toward Normal (-)",
+            "features": family_feature_map[fam_name]
+        })
+
+    # Sort families by net signed contribution descending (top fraud driver first)
+    sorted_families = sorted(family_items, key=lambda x: x["net_contribution"], reverse=True)
+    top_family = sorted_families[0]
+
+    # Detailed per-feature items for secondary table
+    feature_items = []
     for f, c, raw, sc in zip(feature_names, contribs, X_mat[0], X_scaled):
         lbl = FEATURE_LABELS_AMLSIM.get(f, f)
-        share = (abs(c) / total_abs * 100.0) if total_abs > 0 else 0.0
-        items.append({
+        feature_items.append({
             "feature": f,
             "label": lbl,
+            "family": feat_to_fam.get(f, "Other"),
             "raw": float(raw),
             "scaled": float(sc),
             "contribution": float(c),
             "abs_contribution": float(abs(c)),
-            "share_pct": float(share),
-            "is_volume": f in VOLUME_KEYS
         })
-
-    # Rank by positive contribution (pushing log-odds toward fraud)
-    items_by_pos = sorted(items, key=lambda x: x["contribution"], reverse=True)
-    top_feature = items_by_pos[0]
-    top_3 = items_by_pos[:3]
+    sorted_features = sorted(feature_items, key=lambda x: x["contribution"], reverse=True)
 
     prob = float(lr.predict_proba(scaler.transform(X_df))[0, 1])
 
-    clause = f"Linear baseline elevation (LogReg: {prob*100:.1f}%) is driven mainly by {top_feature['label']} ({top_feature['share_pct']:.1f}% of its total contribution)."
+    clause = f"Linear baseline elevation (LogReg: {prob*100:.1f}%) is driven mainly by {top_family['family'].lower()} ({top_family['share_pct']:.1f}% of net family contribution)."
 
     return {
         "prob": prob,
-        "top_3": top_3,
-        "top_feature": top_feature,
+        "top_family": top_family,
+        "families": sorted_families,
+        "features": sorted_features,
         "clause": clause,
-        "total_abs": total_abs
+        "total_abs_fam": sum_abs_fam
     }
 
 
@@ -309,41 +353,56 @@ def predict_amlsim_account(acct_id, features_df, typology=None):
     # Automated model reconciliation note
     divergence_note = None
 
+    # Ground-truth normal vs SAR check
+    is_normal = (typology == "normal")
+    if "label_is_flagged_account" in row.columns:
+        is_normal = bool(row["label_is_flagged_account"].iloc[0] == 0)
+
     # Compute exact linear feature contributions for Logistic Regression
     logreg_expl = explain_logreg_account(acct_id, features_df)
     lr_clause = logreg_expl["clause"] if logreg_expl else f"Linear baseline (LogReg: {lr_score*100:.1f}%) is elevated."
+    top_fam_name = logreg_expl["top_family"]["family"].lower() if logreg_expl else "transaction features"
 
+    # Pattern description
     if typology == "cycle":
-        pattern_phrase = "coordinated circular routing rings (closed wash-trading cycles)"
+        typology_label = "circular routing"
     elif typology == "fan_in":
-        pattern_phrase = "fan-in structuring (multiple inbound deposits consolidating into a single entity)"
+        typology_label = "fan-in"
     elif typology == "fan_out":
-        pattern_phrase = "fan-out dispersion (rapid scattering of funds across multiple counterparties)"
+        typology_label = "fan-out"
     else:
-        pattern_phrase = "dense multi-hop relational connectivity and counterparty clustering"
+        typology_label = typology.replace("_", "-") if typology else "relational"
 
     if structural_override:
-        if lr_score > 0.60:
+        if is_normal:
             divergence_note = (
-                f"Dual-Tier Policy Override: Graph models (GraphSAGE: {gs_score*100:.1f}%, GAT: {gat_score*100:.1f}%) "
-                f"flagged {pattern_phrase} missed by tree ensembles (RF: {rf_score*100:.1f}%, XGB: {xgb_score*100:.1f}%), "
-                f"triggering structural SAR escalation. Note: {lr_clause}"
+                f"Likely false positive: graph models (GraphSAGE {gs_score*100:.1f}%, GAT {gat_score*100:.1f}%) "
+                f"and the linear baseline are elevated by {top_fam_name}; tree ensembles clear this entity."
             )
         else:
-            divergence_note = (
-                f"Dual-Tier Policy Override: Graph models (GraphSAGE: {gs_score*100:.1f}%, GAT: {gat_score*100:.1f}%) "
-                f"flagged {pattern_phrase} missed by tree ensembles (RF: {rf_score*100:.1f}%, XGB: {xgb_score*100:.1f}%), "
-                f"triggering structural SAR escalation."
-            )
-    elif (rf_score >= 0.60 and xgb_score >= 0.60 and gs_score >= 0.60) or min_prob >= 0.60:
-        divergence_note = (
-            f"Consensus Agreement: Both tabular tree ensembles (RF: {rf_score*100:.1f}%, XGB: {xgb_score*100:.1f}%) "
-            f"and graph models (GraphSAGE: {gs_score*100:.1f}%) strongly align on high illicit probability for this {typology.replace('_', '-')} entity."
-        )
+            if lr_score > 0.60:
+                divergence_note = (
+                    f"Dual-Tier Policy Override: Graph models (GraphSAGE: {gs_score*100:.1f}%, GAT: {gat_score*100:.1f}%) "
+                    f"are elevated, consistent with the labelled {typology_label} typology (AMLSim ground truth); "
+                    f"tree ensembles miss this structure (RF: {rf_score*100:.1f}%, XGB: {xgb_score*100:.1f}%), "
+                    f"triggering structural SAR escalation. Note: {lr_clause}"
+                )
+            else:
+                divergence_note = (
+                    f"Dual-Tier Policy Override: Graph models (GraphSAGE: {gs_score*100:.1f}%, GAT: {gat_score*100:.1f}%) "
+                    f"are elevated, consistent with the labelled {typology_label} typology (AMLSim ground truth); "
+                    f"tree ensembles miss this structure (RF: {rf_score*100:.1f}%, XGB: {xgb_score*100:.1f}%), "
+                    f"triggering structural SAR escalation."
+                )
     elif lr_score > 0.60 and xgb_score < 0.25 and gs_score < 0.50:
         divergence_note = (
             f"Linear vs. Structure Divergence: {lr_clause} "
             f"Tree ensembles (XGB: {xgb_score*100:.1f}%) and GNNs clear the entity due to normal turnover ratios and benign counterparty topology."
+        )
+    elif (rf_score >= 0.60 and xgb_score >= 0.60 and gs_score >= 0.60) or min_prob >= 0.60:
+        divergence_note = (
+            f"Consensus Agreement: Both tabular tree ensembles (RF: {rf_score*100:.1f}%, XGB: {xgb_score*100:.1f}%) "
+            f"and graph models (GraphSAGE: {gs_score*100:.1f}%) strongly align on high illicit probability for this {typology_label} entity."
         )
     elif rf_score > 0.65 and gs_score < 0.40 and gat_score < 0.40:
         divergence_note = (
